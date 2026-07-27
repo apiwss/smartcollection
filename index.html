@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telkom Pay Collection Monitoring Dashboard</title>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS (Excel) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- jsPDF & AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css?v=12">
+</head>
+
+<body>
+
+  <!-- Container Dashboard -->
+  <div class="dashboard-container">
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-wrapper">
+          <div class="logo-icon">
+            <i data-lucide="activity" class="neon-icon"></i>
+          </div>
+          <div class="logo-text">
+            <span>TELKOM</span>
+            <small>PAY COLLECTION</small>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <a class="menu-item active" data-panel="overview">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Ringkasan</span>
+        </a>
+        <a class="menu-item" data-panel="action-list" style="position: relative;">
+          <i data-lucide="alert-circle"></i>
+          <span>Tindak Lanjut</span>
+          <span class="sidebar-badge" id="follow-up-badge" style="display: none;">0</span>
+        </a>
+        <a class="menu-item" data-panel="database">
+          <i data-lucide="users"></i>
+          <span>Data Pelanggan</span>
+        </a>
+        <a class="menu-item" data-panel="officers">
+          <i data-lucide="shield-alert"></i>
+          <span>Kinerja Petugas</span>
+        </a>
+        <a class="menu-item" data-panel="integration">
+          <i data-lucide="database-backup"></i>
+          <span>Integrasi Data</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="data-status-pill">
+          <span class="pulse-dot"></span>
+          <span id="data-status-text">Sample Mock Data Active</span>
+        </div>
+        <p class="app-version">v1.1.0 • Integrated Telkom</p>
+      </div>
+    </aside>
+
+    <!-- Sidebar Navigation Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- Top Header -->
+      <header class="top-bar">
+        <button id="btn-hamburger" class="btn-icon btn-hamburger" title="Buka Menu" style="margin-right: 15px;">
+          <i data-lucide="menu"></i>
+        </button>
+        <div class="header-title">
+          <h1 id="page-title">Ringkasan Eksekutif</h1>
+          <p id="page-subtitle">Monitoring aktivitas Unit Pay Collection Telkom secara Real-Time</p>
+        </div>
+
+        <div class="header-actions">
+          <button id="btn-sync-status" class="btn-icon" title="Status Sinkronisasi Data">
+            <i data-lucide="refresh-cw"></i>
+            <span class="tooltip">Data Sinkron Terkini</span>
+          </button>
+
+          <div class="profile-card">
+            <div class="profile-avatar">PC</div>
+            <div class="profile-info">
+              <span class="profile-name">Unit Pay Collection</span>
+              <span class="profile-role">Telkom Regional</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Container -->
+      <div class="content-body">
+
+        <!-- ================= 1. OVERVIEW PANEL ================= -->
+        <section id="panel-overview" class="panel active">
+
+          <!-- KPI Cards Grid -->
+          <div class="kpi-grid">
+
+            <!-- 1. Total Pelanggan -->
+            <div class="kpi-card card-gradient-1">
+              <div class="kpi-info">
+                <h3>Total Pelanggan</h3>
+                <span class="kpi-value" id="kpi-total-pelanggan">0</span>
+                <span class="kpi-desc">Total Pelanggan Terdaftar</span>
+              </div>
+              <div class="kpi-icon-box">
+                <i data-lucide="users"></i>
+              </div>
+            </div>
+
+            <!-- 2. Total Outstanding -->
+            <div class="kpi-card card-gradient-7">
+              <div class="kpi-info">
+                <h3>Total Outstanding</h3>
+                <span class="kpi-value text-pink" id="kpi-outstanding">Rp 0</span>
+                <span class="kpi-desc" id="kpi-outstanding-count">0 tagihan tertunggak</span>
+              </div>
+              <div class="kpi-icon-box text-pink">
+                <i data-lucide="wallet"></i>
+              </div>
+            </div>
+
+            <!-- 3. Sudah Caring -->
+            <div class="kpi-card card-gradient-3">
+              <div class="kpi-info">
+                <h3>Sudah Caring</h3>
+                <span class="kpi-value text-yellow" id="kpi-sudah-caring">0</span>
+                <span class="kpi-desc" id="kpi-sudah-caring-percent">0% dari total</span>
+              </div>
+              <div class="kpi-icon-box text-yellow">
+                <i data-lucide="phone-call"></i>
+              </div>
+            </div>
+
+            <!-- 4. Belum Caring -->
+            <div class="kpi-card card-gradient-2">
+              <div class="kpi-info">
+                <h3>Belum Caring</h3>
+                <span class="kpi-value text-red" id="kpi-belum-caring">0</span>
+                <span class="kpi-desc" id="kpi-belum-caring-percent">0% dari total</span>
+              </div>
+              <div class="kpi-icon-box text-red">
+                <i data-lucide="phone-off"></i>
+              </div>
+            </div>
+
+            <!-- 5. Sudah Visit -->
+            <div class="kpi-card card-gradient-5">
+              <div class="kpi-info">
+                <h3 id="kpi-label-visit-1">Sudah Visit</h3>
+                <span class="kpi-value text-blue" id="kpi-sudah-visit">0</span>
+                <span class="kpi-desc" id="kpi-sudah-visit-percent">0% dari total</span>
+              </div>
+              <div class="kpi-icon-box text-blue">
+                <i data-lucide="navigation"></i>
+              </div>
+            </div>
+
+            <!-- 6. Belum Visit -->
+            <div class="kpi-card card-gradient-4">
+              <div class="kpi-info">
+                <h3 id="kpi-label-visit-2">Belum Visit</h3>
+                <span class="kpi-value text-red" id="kpi-belum-visit">0</span>
+                <span class="kpi-desc" id="kpi-belum-visit-percent">0% dari total</span>
+              </div>
+              <div class="kpi-icon-box text-red">
+                <i data-lucide="map-pin-off"></i>
+              </div>
+            </div>
+
+            <!-- 7. Sudah Bayar -->
+            <div class="kpi-card card-gradient-6">
+              <div class="kpi-info">
+                <h3>Sudah Bayar</h3>
+                <span class="kpi-value text-green" id="kpi-sudah-bayar">0</span>
+                <span class="kpi-desc" id="kpi-sudah-bayar-percent">0% dari total</span>
+              </div>
+              <div class="kpi-icon-box text-green">
+                <i data-lucide="check-check"></i>
+              </div>
+            </div>
+
+            <!-- 8. Belum Bayar -->
+            <div class="kpi-card card-gradient-8">
+              <div class="kpi-info">
+                <h3>Belum Bayar</h3>
+                <span class="kpi-value text-red" id="kpi-belum-bayar">0</span>
+                <span class="kpi-desc" id="kpi-belum-bayar-percent">0% dari total</span>
+              </div>
+              <div class="kpi-icon-box text-red">
+                <i data-lucide="alert-triangle"></i>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Charts Section Grid -->
+          <div class="charts-grid">
+
+            <!-- Chart 1: Status Collection Distribution -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Distribusi Status Tagihan Pelanggan</h3>
+                <p>Status pembayaran & collection pelanggan saat ini</p>
+              </div>
+              <div class="chart-body">
+                <canvas id="chart-status-collection"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 2: Caring vs Visit by Witel -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3 id="chart-title-2">Aktivitas Caring vs Visit per Datel</h3>
+                <p id="chart-desc-2">Perbandingan jangkauan penanganan per wilayah</p>
+              </div>
+              <div class="chart-body">
+                <canvas id="chart-caring-visit"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 3: Outstanding Amount by STO -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Top STO Outstanding</h3>
+                <p>Sentra Telepon Otomat dengan nominal tagihan terbesar (Rupiah)</p>
+              </div>
+              <div class="chart-body">
+                <canvas id="chart-outstanding-sto"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 4: Trend Collection Rate -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3 id="chart-title-4">Tren Collection Rate Mingguan (%)</h3>
+                <p id="chart-desc-4">Tingkat keberhasilan penagihan (target vs realisasi)</p>
+              </div>
+              <div class="chart-body">
+                <canvas id="chart-collection-trend"></canvas>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================= 2. ACTION LIST PANEL (NEED FOLLOW UP) ================= -->
+        <section id="panel-action-list" class="panel">
+
+          <!-- Category Selector Cards -->
+          <div class="action-categories-grid">
+
+            <!-- Category 1: Belum Caring -->
+            <div class="action-category-card active" data-category="belum-caring">
+              <div class="action-card-indicator indicator-red"></div>
+              <div class="action-card-content">
+                <span class="action-card-title">Belum Caring</span>
+                <span class="action-card-count" id="count-belum-caring">0</span>
+                <p class="action-card-desc">Pelanggan lunas/outstanding belum dihubungi.</p>
+              </div>
+              <div class="action-card-icon red">
+                <i data-lucide="phone-off"></i>
+              </div>
+            </div>
+
+            <!-- Category 2: Sudah Caring, Belum Visit -->
+            <div class="action-category-card" data-category="caring-no-visit">
+              <div class="action-card-indicator indicator-orange"></div>
+              <div class="action-card-content">
+                <span class="action-card-title">Caring, Belum Visit</span>
+                <span class="action-card-count" id="count-caring-no-visit">0</span>
+                <p class="action-card-desc">Sudah dihubungi, belum dikunjungi collector.</p>
+              </div>
+              <div class="action-card-icon orange">
+                <i data-lucide="map-pin-off"></i>
+              </div>
+            </div>
+
+            <!-- Category 3: Sudah Visit, Belum Bayar -->
+            <div class="action-category-card" data-category="visit-no-pay">
+              <div class="action-card-indicator indicator-blue"></div>
+              <div class="action-card-content">
+                <span class="action-card-title">Visit, Belum Lunas</span>
+                <span class="action-card-count" id="count-visit-no-pay">0</span>
+                <p class="action-card-desc">Sudah dikunjungi lapangan, belum melunasi.</p>
+              </div>
+              <div class="action-card-icon blue">
+                <i data-lucide="navigation"></i>
+              </div>
+            </div>
+
+            <!-- Category 4: Outstanding > 2 Bulan -->
+            <div class="action-category-card" data-category="outstanding-2-months">
+              <div class="action-card-indicator indicator-purple"></div>
+              <div class="action-card-content">
+                <span class="action-card-title">Tunggakan &gt; 2 Bulan</span>
+                <span class="action-card-count" id="count-outstanding-2-months">0</span>
+                <p class="action-card-desc">Pelanggan kritis menunggak lebih dari 2 bulan.</p>
+              </div>
+              <div class="action-card-icon purple">
+                <i data-lucide="alert-triangle"></i>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Table of Customers Needing Action -->
+          <div class="table-glass-card" style="margin-top:20px;">
+            <div class="table-header-row"
+              style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; padding: 20px 24px 0 24px;">
+              <div class="table-header-left">
+                <h3 id="action-list-table-title" style="font-size:18px; font-weight:700;">Daftar Pelanggan: Belum Caring
+                </h3>
+                <p id="action-list-table-desc" style="font-size:12px; color: var(--text-muted);">Daftar pelanggan
+                  prioritas yang membutuhkan caring via telepon atau WhatsApp.</p>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <!-- Filter Petugas Caring -->
+                <div class="filter-group-action"
+                  style="position: relative; display: flex; align-items: center; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px; height: 42px;">
+                  <i data-lucide="user"
+                    style="width: 16px; height: 16px; color: var(--text-muted); margin-right: 8px;"></i>
+                  <select id="action-filter-petugas"
+                    style="background: transparent; border: none; color: #FFF; font-family: var(--font-family); font-size: 13px; outline: none; cursor: pointer; padding-right: 16px; height: 100%;">
+                    <option value="" style="background: var(--bg-primary); color: #FFF;">Semua Petugas</option>
+                  </select>
+                </div>
+
+                <div class="search-box-wrapper" style="max-width:300px; margin-bottom: 0;">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="action-search-input" placeholder="Cari di list ini...">
+                </div>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nomor Internet</th>
+                    <th>Nama Pelanggan</th>
+                    <th>Datel / STO</th>
+                    <th>Outstanding Tagihan</th>
+                    <th>Umur Tagihan</th>
+                    <th>Last Update</th>
+                    <th style="text-align: center;">Tindakan</th>
+                  </tr>
+                </thead>
+                <tbody id="action-table-body">
+                  <!-- Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-pagination">
+              <div class="pagination-info">
+                Menampilkan <strong id="action-paginated-range">0-0</strong> dari <strong
+                  id="action-paginated-total">0</strong> data
+              </div>
+              <div class="pagination-controls">
+                <button class="btn btn-outline" id="action-btn-prev-page" disabled><i data-lucide="chevron-left"></i>
+                  Sebelum</button>
+                <div class="pagination-numbers" id="action-pagination-numbers">
+                  <!-- Dynamic page numbers -->
+                </div>
+                <button class="btn btn-outline" id="action-btn-next-page"><i data-lucide="chevron-right"></i>
+                  Sesudah</button>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ================= 2. DATABASE PANEL ================= -->
+        <section id="panel-database" class="panel">
+
+          <!-- Filter Container -->
+          <div class="filter-glass-card">
+            <div class="filter-card-header">
+              <div class="filter-title">
+                <i data-lucide="sliders-horizontal"></i>
+                <span>Filter Pencarian Integrasi</span>
+              </div>
+              <button id="btn-reset-filters" class="btn-text">
+                <i data-lucide="rotate-ccw"></i> Reset Filter
+              </button>
+            </div>
+
+            <div class="filter-inputs-grid">
+              <!-- Regional -->
+              <div class="filter-group">
+                <label for="filter-regional">Area (Regional)</label>
+                <select id="filter-regional" class="filter-select">
+                  <option value="">Semua Area</option>
+                  <!-- dynamic -->
+                </select>
+              </div>
+
+              <!-- Datel -->
+              <div class="filter-group">
+                <label for="filter-witel">Datel</label>
+                <select id="filter-witel" class="filter-select">
+                  <option value="">Semua Datel</option>
+                  <!-- dynamic -->
+                </select>
+              </div>
+
+              <!-- STO -->
+              <div class="filter-group">
+                <label for="filter-sto">STO</label>
+                <select id="filter-sto" class="filter-select">
+                  <option value="">Semua STO</option>
+                  <!-- dynamic -->
+                </select>
+              </div>
+
+              <!-- Status Caring -->
+              <div class="filter-group">
+                <label for="filter-caring">Status Caring</label>
+                <select id="filter-caring" class="filter-select">
+                  <option value="">Semua Caring</option>
+                  <option value="Belum Caring">Belum Caring</option>
+                  <option value="Sudah Caring">Sudah Caring</option>
+                </select>
+              </div>
+
+              <!-- Status Visit -->
+              <div class="filter-group">
+                <label for="filter-visit">Status Visit</label>
+                <select id="filter-visit" class="filter-select">
+                  <option value="">Semua Visit</option>
+                  <option value="Belum Visit">Belum Visit</option>
+                  <option value="Sudah Visit">Sudah Visit</option>
+                </select>
+              </div>
+
+              <!-- Status Pembayaran -->
+              <div class="filter-group">
+                <label for="filter-pembayaran">Status Pembayaran</label>
+                <select id="filter-pembayaran" class="filter-select">
+                  <option value="">Semua Pembayaran</option>
+                  <option value="Lunas">Lunas</option>
+                  <option value="Belum Bayar">Belum Bayar</option>
+                </select>
+              </div>
+
+              <!-- Umur Tagihan -->
+              <div class="filter-group">
+                <label for="filter-umur">Umur Tagihan</label>
+                <select id="filter-umur" class="filter-select">
+                  <option value="">Semua Umur</option>
+                  <option value="1 Bulan">1 Bulan</option>
+                  <option value="2 Bulan">2 Bulan</option>
+                  <option value="> 2 Bulan">&gt; 2 Bulan</option>
+                </select>
+              </div>
+
+              <!-- Petugas -->
+              <div class="filter-group">
+                <label for="filter-petugas">Petugas</label>
+                <select id="filter-petugas" class="filter-select">
+                  <option value="">Semua Petugas</option>
+                  <!-- dynamic -->
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-action-row">
+              <div class="search-box-wrapper">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-input" placeholder="Cari Internet Number, Nama Pelanggan, No HP...">
+              </div>
+
+              <div class="export-actions">
+                <button id="btn-export-excel" class="btn btn-secondary">
+                  <i data-lucide="file-spreadsheet" class="btn-icon-svg"></i> Export Excel
+                </button>
+                <button id="btn-export-pdf" class="btn btn-primary">
+                  <i data-lucide="file-down" class="btn-icon-svg"></i> Export PDF
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Card -->
+          <div class="table-glass-card">
+            <div class="table-responsive">
+              <table id="customer-table">
+                <thead>
+                  <tr>
+                    <th>Nomor Internet</th>
+                    <th>Nama Pelanggan</th>
+                    <th>Datel / STO</th>
+                    <th>Status Tagihan (Aging)</th>
+                    <th>Status Caring</th>
+                    <th>Status Visit</th>
+                    <th>Status Pembayaran</th>
+                    <th>Last Update</th>
+                    <th style="text-align: center;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="customer-table-body">
+                  <!-- Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Table Pagination -->
+            <div class="table-pagination">
+              <div class="pagination-info">
+                Menampilkan <span id="paginated-start">0</span> - <span id="paginated-end">0</span> dari <span
+                  id="paginated-total">0</span> data pelanggan
+              </div>
+              <div class="pagination-controls">
+                <button id="btn-prev-page" class="btn-page" disabled><i data-lucide="chevron-left"></i></button>
+                <div class="pagination-numbers" id="pagination-numbers">
+                  <!-- dynamic -->
+                </div>
+                <button id="btn-next-page" class="btn-page" disabled><i data-lucide="chevron-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ================= 3. OFFICERS PANEL ================= -->
+        <section id="panel-officers" class="panel">
+
+          <div class="officers-overview-grid">
+
+            <!-- Left: Officer Leaderboard Table -->
+            <div class="table-glass-card list-officers-card">
+              <div class="card-header-with-badge">
+                <div>
+                  <h3>Kinerja Petugas Collection (Caring & Visit)</h3>
+                  <p>Rekapitulasi efektivitas dan produktivitas petugas di lapangan</p>
+                </div>
+                <div class="badge badge-purple" id="officer-count-badge">0 Petugas Aktif</div>
+              </div>
+
+              <div class="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nama Petugas</th>
+                      <th>Datel Base</th>
+                      <th style="text-align: center;">Total Caring</th>
+                      <th style="text-align: center;">Total Visit</th>
+                      <th style="text-align: center;">Lunas Tagihan</th>
+                      <th>Collection Rate</th>
+                      <th>Rating Kinerja</th>
+                    </tr>
+                  </thead>
+                  <tbody id="officer-table-body">
+                    <!-- Dynamic Content -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Performance Insights -->
+            <div class="officer-insights-panel">
+              <div class="glass-card inner-insights-card">
+                <h3>Sorotan Performa Petugas</h3>
+                <div class="insight-metric-row">
+                  <div class="insight-metric-item">
+                    <span class="insight-label">Top Caring Officer</span>
+                    <span class="insight-value text-yellow" id="top-caring-officer">-</span>
+                    <span class="insight-sub" id="top-caring-count">0 Panggilan</span>
+                  </div>
+                  <div class="insight-metric-item">
+                    <span class="insight-label">Top Visit Officer</span>
+                    <span class="insight-value text-blue" id="top-visit-officer">-</span>
+                    <span class="insight-sub" id="top-visit-count">0 Kunjungan</span>
+                  </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <h3>Statistik Efektivitas Jaringan Collection</h3>
+                <div class="stat-progress-section">
+                  <div class="progress-bar-container">
+                    <div class="progress-info">
+                      <span>Caring Success Rate (Janji Bayar / Caring)</span>
+                      <span id="caring-success-percent">0%</span>
+                    </div>
+                    <div class="progress-track">
+                      <div class="progress-fill fill-yellow" id="caring-success-bar" style="width: 0%"></div>
+                    </div>
+                  </div>
+
+                  <div class="progress-bar-container">
+                    <div class="progress-info">
+                      <span>Visit Success Rate (Lunas / Visit)</span>
+                      <span id="visit-success-percent">0%</span>
+                    </div>
+                    <div class="progress-track">
+                      <div class="progress-fill fill-blue" id="visit-success-bar" style="width: 0%"></div>
+                    </div>
+                  </div>
+
+                  <div class="progress-bar-container">
+                    <div class="progress-info">
+                      <span>Overall Target Achievement</span>
+                      <span id="overall-target-percent">0%</span>
+                    </div>
+                    <div class="progress-track">
+                      <div class="progress-fill fill-pink" id="overall-target-bar" style="width: 0%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Officer visual doughnut chart -->
+              <div class="chart-card" style="margin-top: 20px;">
+                <div class="chart-header">
+                  <h3>Porsi Kontribusi Pembayaran per Petugas</h3>
+                  <p>Proporsi nominal pembayaran yang berhasil ditagih</p>
+                </div>
+                <div class="chart-body">
+                  <canvas id="chart-officer-performance"></canvas>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ================= 4. INTEGRATION PANEL ================= -->
+        <section id="panel-integration" class="panel">
+
+          <div class="integration-grid">
+
+            <!-- Left: Uploader UI -->
+            <!-- Left: Uploader UI -->
+            <div class="glass-card upload-dashboard-card" style="position:relative;">
+
+              <!-- Uploader View (Visible when empty) -->
+              <div id="uploader-view">
+                <h3>Upload & Sinkronisasi Spreadsheet Google</h3>
+                <p class="description">
+                  Unduh file spreadsheet Google Anda (Format Excel `.xlsx` atau CSV `.csv`) dan seret ke kolom di bawah
+                  ini.
+                  Sistem akan secara otomatis mendeteksi dan menggabungkan data berdasarkan <strong>Internet Number
+                    (Service ID)</strong>.
+                </p>
+
+                <div class="upload-widget-list">
+
+                  <!-- File 1: Data All -->
+                  <div class="upload-widget" id="widget-data-all" style="flex: 1; max-width: 100%;">
+                    <div class="widget-icon">
+                      <i data-lucide="file-spreadsheet" class="neon-purple"></i>
+                    </div>
+                    <div class="widget-details" style="width: 100%;">
+                      <h4>File DATA ALL atau C3MR Unpaid (Auto Detect)</h4>
+                      <p>Wajib mengandung kolom: <code>SND</code> / <code>NPER</code>, <code>NAMA</code>,
+                        <code>SALDO</code> / <code>BILL_AMOUNT</code>, <code>STATUS BAYAR</code>, dll.</p>
+                      <div class="drop-zone" id="drop-zone-data-all">
+                        <i data-lucide="upload-cloud"></i>
+                        <span>Seret & lepas file di sini atau <strong class="click-trigger">Pilih File</strong></span>
+                        <input type="file" id="file-data-all" accept=".xlsx,.xls,.csv" style="display:none">
+                      </div>
+                      <div class="upload-status-indicator" id="status-data-all">
+                        <i data-lucide="circle-dashed" class="spinning"></i> <span>Menunggu file...</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Google Sheets Sync (Alternatif Data All) -->
+                  <div class="upload-widget" id="widget-google-sheets" style="flex: 1; max-width: 100%;">
+                    <div class="widget-icon" style="background: rgba(16, 124, 65, 0.12);">
+                      <i data-lucide="sheet" style="color: #107c41;"></i>
+                    </div>
+                    <div class="widget-details" style="width: 100%;">
+                      <h4>Sinkronisasi Google Sheets (Alternatif DATA ALL)</h4>
+                      <p>Membaca sheet bernama <code>Data All</code>. Pastikan akses spreadsheet diatur ke <strong>"Siapa saja yang memiliki link dapat melihat"</strong>.</p>
+                      
+                      <div class="gsheet-input-container" style="display: flex; gap: 8px; margin-top: 6px;">
+                        <input type="text" id="input-google-sheets-link" placeholder="Masukkan Link Google Sheets..." style="flex-grow: 1; background: rgba(22, 10, 13, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: #FFF; font-size: 12px;">
+                        <button id="btn-sync-google-sheets" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 8px 16px; border-radius: 8px;">
+                          <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Hubungkan
+                        </button>
+                      </div>
+                      
+                      <div class="upload-status-indicator" id="status-google-sheets" style="margin-top: 6px; font-size: 11px; display: flex; align-items: center; gap: 6px; color: var(--text-muted);">
+                        <i data-lucide="info" style="width: 14px; height: 14px;"></i> <span>Belum terhubung</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Integration Action Buttons -->
+                <div class="integration-actions">
+                  <button id="btn-process-sheets" class="btn btn-primary w-100" disabled style="display:none;">
+                    <i data-lucide="refresh-cw"></i> Hubungkan & Sinkronkan Data
+                  </button>
+
+                  <div class="secondary-actions-row" style="margin-top:15px; display: flex; gap:10px;">
+                    <button id="btn-load-mock" class="btn btn-secondary w-50">
+                      <i data-lucide="database"></i> Gunakan Data Sampel
+                    </button>
+                    <button id="btn-clear-data" class="btn btn-danger w-50" style="display:none;">
+                      <i data-lucide="trash-2"></i> Hapus Seluruh Data
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Active Dataset View (Visible when data is loaded) -->
+              <div id="active-dataset-view" style="display: none; padding: 10px 0;">
+                <h3 style="margin-bottom: 8px;">Dataset Aktif</h3>
+                <p class="description" style="margin-bottom: 20px;">
+                  Dashboard saat ini menggunakan data persisten yang tersimpan di dalam penyimpanan lokal browser.
+                </p>
+
+                <div class="glass-card active-dataset-info-card"
+                  style="padding: 20px; border-radius: 12px; background: rgba(254, 46, 75, 0.04); border: 1px solid rgba(254, 46, 75, 0.25); margin-bottom: 20px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px; min-width: 0; width: 100%;">
+                    <div style="display:flex; align-items:center; gap: 10px; min-width: 0; flex: 1;">
+                      <div
+                        style="width: 40px; height: 40px; background: rgba(37, 211, 102, 0.12); border-radius: 10px; display:flex; align-items:center; justify-content:center; color:#25D366; flex-shrink: 0;">
+                        <i data-lucide="check-circle" style="width:20px; height:20px;"></i>
+                      </div>
+                      <div style="min-width: 0; flex: 1;">
+                        <span id="active-file-title"
+                          style="font-size:14px; font-weight:700; color:#FFF; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Data
+                          All_Juli2026.xlsx</span>
+                        <span id="active-dataset-badge-type"
+                          style="font-size:11px; color:#C084FC; font-weight:600; display:block; margin-top:2px;">Data
+                          All</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 12px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 16px;">
+                    <div>
+                      <div style="font-size:9px; color:var(--text-muted); text-transform:uppercase; margin-bottom:2px;">
+                        Upload Terakhir</div>
+                      <div style="font-size:12px; font-weight:600; color:#FFF;" id="active-dataset-time">2 Juli 2026
+                        09:45</div>
+                    </div>
+                    <div>
+                      <div style="font-size:9px; color:var(--text-muted); text-transform:uppercase; margin-bottom:2px;">
+                        Jumlah Data</div>
+                      <div style="font-size:12px; font-weight:600; color:#FFF;" id="active-dataset-records">34.286
+                        pelanggan</div>
+                    </div>
+                  </div>
+
+                  <!-- Google Sheets Sync Action (Displayed when Google Sheets is active) -->
+                  <div id="gsheet-sync-container" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                    <button id="btn-sync-refresh" class="btn btn-primary w-100" style="display:flex; align-items:center; justify-content:center; gap:8px; font-size: 13px; padding: 12px; border-radius: 8px;">
+                      <i data-lucide="refresh-cw" style="width:16px; height:16px;"></i> Sinkronkan Sekarang
+                    </button>
+                    <div class="flex-mobile-column" style="display:flex; gap: 10px; width: 100%;">
+                      <button id="btn-change-spreadsheet" class="btn btn-secondary w-50" style="display:flex; align-items:center; justify-content:center; gap:6px; font-size: 12px; padding: 10px; border-radius: 8px;">
+                        <i data-lucide="edit-3" style="width:14px; height:14px;"></i> Ganti Spreadsheet
+                      </button>
+                      <button id="btn-default-spreadsheet" class="btn btn-secondary w-50" style="display:flex; align-items:center; justify-content:center; gap:6px; font-size: 11px; padding: 10px; border-radius: 8px;">
+                        <i data-lucide="undo-2" style="width:14px; height:14px;"></i> Kembali ke Default
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="flex-mobile-column" style="display:flex; gap: 12px;">
+                    <button id="btn-change-dataset" onclick="triggerChangeDataset()" class="btn btn-secondary w-50"
+                      style="display:flex; align-items:center; justify-content:center; gap:6px; font-size: 12px; padding: 10px;">
+                      <i data-lucide="upload-cloud" style="width:14px; height:14px;"></i> Ganti Dataset
+                    </button>
+                    <button id="btn-clear-dataset" onclick="triggerClearDataset()" class="btn btn-danger w-50"
+                      style="display:flex; align-items:center; justify-content:center; gap:6px; font-size: 12px; padding: 10px;">
+                      <i data-lucide="trash-2" style="width:14px; height:14px;"></i> Hapus Dataset
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right: Live Log / Mapping status -->
+            <div class="glass-card log-console-card">
+              <div class="console-header">
+                <h3>Console Status Integrasi</h3>
+                <span class="indicator-green" id="sync-console-indicator">READY</span>
+              </div>
+
+              <div class="console-body" id="sync-console-log">
+                <div class="log-line text-muted">[14:18:00] Sistem diinisialisasi.</div>
+                <div class="log-line text-purple">[14:18:02] Memuat 120 database sampel pelanggan Telkom Pay
+                  Collection...</div>
+                <div class="log-line text-green">[14:18:03] Berhasil mengintegrasikan 120 data utama dengan data Caring
+                  & Visit.</div>
+                <div class="log-line">[14:18:03] Status Integrasi: OK. Siap memonitoring.</div>
+              </div>
+
+              <div class="console-footer">
+                <div class="stat-pill-list">
+                  <div class="stat-pill">
+                    <span>Matched Keys</span>
+                    <strong id="summary-matched-keys">120/120</strong>
+                  </div>
+                  <div class="stat-pill">
+                    <span>Caring Rate</span>
+                    <strong id="summary-caring-rate">79.2%</strong>
+                  </div>
+                  <div class="stat-pill">
+                    <span>Visit Rate</span>
+                    <strong id="summary-visit-rate">45.8%</strong>
+                  </div>
+                  <div class="stat-pill">
+                    <span>Collection Rate</span>
+                    <strong id="summary-collection-rate">33.3%</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= DETAIL DRAWER (TIMELINE & PROFILE) ================= -->
+  <div class="side-drawer-overlay" id="detail-drawer-overlay"></div>
+  <div class="side-drawer" id="detail-drawer">
+    <div class="drawer-header">
+      <h3>Detail & Aktivitas Pelanggan</h3>
+      <button class="btn-close-drawer" id="btn-close-drawer">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <div class="drawer-content">
+
+      <!-- Drawer Customer Profile -->
+      <div class="drawer-section customer-hero">
+        <div class="avatar-large" id="drawer-avatar">IN</div>
+        <div class="hero-text">
+          <h2 id="drawer-cust-name">-</h2>
+          <span class="internet-number" id="drawer-cust-id">-</span>
+        </div>
+        <span class="badge" id="drawer-cust-status">Belum Caring</span>
+      </div>
+
+      <!-- Customer Information Info Grid -->
+      <div class="drawer-section">
+        <h4 class="drawer-sub-title">Informasi Dasar Pelanggan</h4>
+        <div class="info-grid-2">
+          <div class="info-item">
+            <span class="info-label">No Handphone</span>
+            <span class="info-value" id="drawer-phone">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Regional / Datel</span>
+            <span class="info-value" id="drawer-witel">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">STO</span>
+            <span class="info-value" id="drawer-sto">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Nominal Tagihan</span>
+            <span class="info-value text-pink font-bold" id="drawer-tagihan">Rp 0</span>
+          </div>
+          <div class="info-item cols-2">
+            <span class="info-label">Periode Tagihan</span>
+            <span class="info-value" id="drawer-periode">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Timeline Step Indicator -->
+      <div class="drawer-section">
+        <h4 class="drawer-sub-title">Timeline Progress Collection</h4>
+        <div class="timeline">
+
+          <!-- Step 1: Tagihan -->
+          <div class="timeline-item completed" id="step-tagihan">
+            <div class="timeline-badge">
+              <i data-lucide="file-text"></i>
+            </div>
+            <div class="timeline-panel">
+              <div class="timeline-heading">
+                <h4>Tagihan Terbit</h4>
+                <small class="text-muted" id="timeline-tagihan-date">Tanggal: -</small>
+              </div>
+              <div class="timeline-body">
+                <p>Tagihan layanan Telkom berhasil diterbitkan. Pelanggan memasuki daftar antrean tagihan.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Caring -->
+          <div class="timeline-item" id="step-caring">
+            <div class="timeline-badge">
+              <i data-lucide="phone"></i>
+            </div>
+            <div class="timeline-panel">
+              <div class="timeline-heading">
+                <h4>Caring Customer</h4>
+                <small class="text-muted" id="timeline-caring-date">Tanggal: -</small>
+              </div>
+              <div class="timeline-body">
+                <p id="timeline-caring-desc">Menunggu giliran penanganan telepon / WhatsApp oleh Unit Pay Collection.
+                </p>
+                <div class="timeline-meta" id="timeline-caring-meta" style="display:none">
+                  <span><strong>Petugas:</strong> <span id="timeline-caring-officer">-</span></span>
+                  <span><strong>Hasil:</strong> <span id="timeline-caring-result">-</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Visit -->
+          <div class="timeline-item" id="step-visit">
+            <div class="timeline-badge">
+              <i data-lucide="map-pin"></i>
+            </div>
+            <div class="timeline-panel">
+              <div class="timeline-heading">
+                <h4>Kunjungan Lapangan (Visit)</h4>
+                <small class="text-muted" id="timeline-visit-date">Tanggal: -</small>
+              </div>
+              <div class="timeline-body">
+                <p id="timeline-visit-desc">Belum dijadwalkan visit teknisi/collector (tidak memerlukan visit jika
+                  caring lunas / sepakat janji bayar cepat).</p>
+                <div class="timeline-meta" id="timeline-visit-meta" style="display:none">
+                  <span><strong>Kolektor:</strong> <span id="timeline-visit-officer">-</span></span>
+                  <span><strong>Hasil:</strong> <span id="timeline-visit-result">-</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Pembayaran -->
+          <div class="timeline-item" id="step-bayar">
+            <div class="timeline-badge">
+              <i data-lucide="dollar-sign"></i>
+            </div>
+            <div class="timeline-panel">
+              <div class="timeline-heading">
+                <h4>Pembayaran (Settlement)</h4>
+                <small class="text-muted" id="timeline-bayar-date">Tanggal: -</small>
+              </div>
+              <div class="timeline-body">
+                <p id="timeline-bayar-desc">Menunggu konfirmasi pembayaran lunas tagihan.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= AR DETAIL DRAWER ================= -->
+  <div class="side-drawer-overlay" id="ar-drawer-overlay"></div>
+  <div class="side-drawer" id="ar-drawer">
+    <div class="drawer-header">
+      <h3>Detail Statistik AR (Account Representative)</h3>
+      <button class="btn-close-drawer" id="btn-close-ar-drawer">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <div class="drawer-content">
+
+      <!-- Drawer AR Profile -->
+      <div class="drawer-section customer-hero">
+        <div class="avatar-large" id="ar-drawer-avatar"
+          style="background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">
+          AR</div>
+        <div class="hero-text">
+          <h2 id="ar-drawer-name">-</h2>
+          <span class="internet-number">Petugas Collection</span>
+        </div>
+      </div>
+
+      <!-- AR Statistics Grid -->
+      <div class="drawer-section">
+        <h4 class="drawer-sub-title">Statistik Penugasan & Performa</h4>
+        <div class="info-grid-2">
+          <div class="info-item">
+            <span class="info-label">Total Pelanggan</span>
+            <span class="info-value font-bold" id="ar-total-pelanggan">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Outstanding Tagihan</span>
+            <span class="info-value text-pink font-bold" id="ar-outstanding">Rp 0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Sudah Bayar</span>
+            <span class="info-value text-green font-bold" id="ar-sudah-bayar">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Belum Bayar</span>
+            <span class="info-value text-red font-bold" id="ar-belum-bayar">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Sudah Caring</span>
+            <span class="info-value text-yellow font-bold" id="ar-sudah-caring">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Belum Caring</span>
+            <span class="info-value text-muted font-bold" id="ar-belum-caring">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Sudah Visit</span>
+            <span class="info-value text-blue font-bold" id="ar-sudah-visit">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Belum Visit</span>
+            <span class="info-value text-muted font-bold" id="ar-belum-visit">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Contacted (Caring)</span>
+            <span class="info-value text-green font-bold" id="ar-contacted">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Uncontacted (Caring)</span>
+            <span class="info-value text-red font-bold" id="ar-uncontacted">0</span>
+          </div>
+          <div class="info-item cols-2">
+            <span class="info-label">Janji Bayar</span>
+            <span class="info-value text-yellow font-bold" id="ar-janji-bayar">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="dataAllParser.js?v=5"></script>
+  <script src="c3mrParser.js?v=6"></script>
+  <script src="app.js?v=26"></script>
+</body>
+
+</html>
