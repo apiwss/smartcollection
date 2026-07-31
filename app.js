@@ -10,7 +10,9 @@ const rowsPerPage = 10;
 let actionCurrentPage = 1;
 const actionRowsPerPage = 50;
 let actionFilterPetugasVal = ""; // Action list Petugas Caring filter value
+
 const DEFAULT_GSHEETS_LINK = "https://docs.google.com/spreadsheets/d/1RjhMpP3pTlzONbuoRajODGz3tTGm3p73/edit";
+
 
 // Raw spreadsheet uploads
 let rawDataAll = null;
@@ -1836,6 +1838,15 @@ function getSpreadsheetId(url) {
   return null;
 }
 
+function saveStoredGsheetsLink(link) {
+  if (!link) return;
+  localStorage.setItem('google_sheets_link', link);
+}
+
+function getStoredGsheetsLink() {
+  return localStorage.getItem('google_sheets_link') || "";
+}
+
 async function fetchGoogleSheetAndSync(sheetsLink, isSilent = false) {
   const spreadsheetId = getSpreadsheetId(sheetsLink);
   if (!spreadsheetId) {
@@ -1939,7 +1950,7 @@ async function fetchGoogleSheetAndSync(sheetsLink, isSilent = false) {
     rawDataAll = jsonData;
     window.lastUploadedFileName = `Google Sheets (${spreadsheetId})`;
 
-    localStorage.setItem('google_sheets_link', sheetsLink);
+    saveStoredGsheetsLink(sheetsLink);
 
     if (statusElement) {
       statusElement.className = "upload-status-indicator success";
@@ -2035,7 +2046,7 @@ function setupFileDropZones() {
   const btnSyncRefresh = document.getElementById("btn-sync-refresh");
   if (btnSyncRefresh) {
     btnSyncRefresh.addEventListener("click", async () => {
-      const storedLink = localStorage.getItem('google_sheets_link') || (inputGoogleSheetsLink ? inputGoogleSheetsLink.value.trim() : "");
+      const storedLink = getStoredGsheetsLink() || (inputGoogleSheetsLink ? inputGoogleSheetsLink.value.trim() : "");
       if (!storedLink) {
         alert("Link Google Sheets tidak ditemukan. Silakan hubungkan ulang.");
         return;
@@ -2086,13 +2097,18 @@ function setupFileDropZones() {
         lucide.createIcons({ root: btnDefaultSpreadsheet });
 
         try {
+          const activeKey = getActiveAuthKey();
+          const defaultDecrypted = decryptText(DEFAULT_GSHEETS_LINK_ENCRYPTED, activeKey);
+          
           // Set input value to default link
           const inputGsLink = document.getElementById("input-google-sheets-link");
-          if (inputGsLink) {
-            inputGsLink.value = DEFAULT_GSHEETS_LINK;
+          if (inputGsLink && defaultDecrypted) {
+            inputGsLink.value = defaultDecrypted;
           }
           // Sync default spreadsheet
-          await fetchGoogleSheetAndSync(DEFAULT_GSHEETS_LINK);
+          if (defaultDecrypted) {
+            await fetchGoogleSheetAndSync(defaultDecrypted);
+          }
           showNotification("Berhasil kembali ke Google Spreadsheet Default!", "success");
         } catch (err) {
           alert(`Gagal menyinkronkan spreadsheet default: ${err.message}`);
